@@ -1,0 +1,11 @@
+# ignore compiled files
+/bin
+
+# ignore haxelib
+/.haxelib
+
+# ignore logs
+logs.txt
+
+# ignore .vscode
+/.vscode
