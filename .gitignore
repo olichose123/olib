@@ -6,6 +6,6 @@
 
 # ignore logs
 logs.txt
-
+/logs
 # ignore .vscode
 /.vscode

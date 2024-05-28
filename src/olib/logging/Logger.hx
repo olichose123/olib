@@ -1,13 +1,19 @@
 package olib.logging;
 
-import haxe.PosInfos;
+import sys.FileSystem;
 
 using StringTools;
 using haxe.EnumTools.EnumValueTools;
 using DateTools;
 
+import haxe.PosInfos;
+import utest.Test;
+import utest.Assert;
+
 class Logger
 {
+    static var loggers:Array<Logger> = new Array<Logger>();
+    static var defaultLogger:Logger = new Logger("default");
     static var log_level_order = [
         LogLevel.Debug => 0,
         LogLevel.Info => 1,
@@ -17,47 +23,13 @@ class Logger
     ];
 
     static var internal_trace:(v:Dynamic, ?infos:PosInfos) -> Void;
-    static var globalLogger:Logger;
-
-    public var format:LogFormat;
-    public var logLevel:LogLevel;
-
-    public var logs:Array<String> = [];
-
-    public function new(?level:LogLevel, ?format:LogFormat):Void
-    {
-        this.format = format == null ? new LogFormat() : format;
-        this.logLevel = level == null ? LogLevel.Debug : level;
-        if (internal_trace == null)
-        {
-            internal_trace = haxe.Log.trace;
-            haxe.Log.trace = Logger.trace;
-            init();
-        }
-    }
-
-    public function init():Void
-    {
-        globalLogger = this;
-    }
-
-    public function log(level:LogLevel, message:String, ?infos:PosInfos):Void
-    {
-        if (log_level_order[level] < log_level_order[logLevel])
-        {
-            return;
-        }
-        var msg = format.format(level, message);
-        logs.push(msg);
-        print(msg);
-    }
 
     static function trace(v:Dynamic, ?infos:PosInfos):Void
     {
-        if (globalLogger != null)
+        if (defaultLogger != null)
         {
             var last_param = infos.customParams?.pop();
-            var current_log_level = log_level_order[globalLogger.logLevel];
+            var current_log_level = log_level_order[defaultLogger.level];
             if (last_param != null && Std.isOfType(last_param, LogLevel))
             {
                 switch (last_param)
@@ -88,11 +60,11 @@ class Logger
                             return;
                         }
                 }
-                globalLogger.log(last_param, Std.string(v), infos);
+                defaultLogger.log(last_param, Std.string(v), infos);
                 return;
             }
 
-            globalLogger.log(LogLevel.Debug, Std.string(v), infos);
+            defaultLogger.log(LogLevel.Debug, Std.string(v), infos);
         }
         else
         {
@@ -113,6 +85,70 @@ class Logger
         throw new haxe.exceptions.NotImplementedException();
         #end
     }
+
+    public static function dump(logsPath:String):Void
+    {
+        for (logger in loggers)
+        {
+            if (logger.logs.length == 0)
+            {
+                continue;
+            }
+            if (FileSystem.exists(logsPath) == false)
+            {
+                FileSystem.createDirectory(logsPath);
+            }
+            var logFile = sys.io.File.write(logsPath + "/" + logger.name + ".txt");
+            logFile.writeString("Logs for " + logger.name + "\n\n");
+            for (log in logger.logs)
+            {
+                logFile.writeString(log + "\n");
+            }
+            logFile.close();
+        }
+    }
+
+    var name:String;
+    var format:LogFormat;
+    var level:LogLevel;
+    var logs:Array<String> = [];
+
+    public function new(name:String, ?level:LogLevel, ?format:LogFormat):Void
+    {
+        if (!~/^[a-z0-9_-]*$/m.match(name))
+        {
+            throw new haxe.exceptions.ArgumentException("Logger name must match ^[a-zA-Z0-9_-]*$");
+        }
+        loggers.push(this);
+        this.name = name;
+        this.format = format == null ? new LogFormat() : format;
+        this.level = level == null ? LogLevel.Debug : level;
+        if (internal_trace == null)
+        {
+            internal_trace = haxe.Log.trace;
+            haxe.Log.trace = Logger.trace;
+        }
+    }
+
+    public function log(level:LogLevel, message:String, ?infos:PosInfos):Void
+    {
+        if (log_level_order[level] < log_level_order[level])
+        {
+            return;
+        }
+        var msg = format.format(level, message);
+        logs.push(msg);
+        print(msg);
+    }
+}
+
+enum LogLevel
+{
+    Debug;
+    Info;
+    Warning;
+    Error;
+    Critical;
 }
 
 abstract LogFormat(String) from String to String
@@ -138,11 +174,20 @@ abstract LogFormat(String) from String to String
     }
 }
 
-enum LogLevel
+class LoggerTest extends Test
 {
-    Debug;
-    Info;
-    Warning;
-    Error;
-    Critical;
+    function testNameRegex():Void
+    {
+        Assert.raises(function()
+        {
+            new Logger("My Logger", LogLevel.Debug, new LogFormat());
+        }, haxe.exceptions.ArgumentException);
+
+        Assert.raises(function()
+        {
+            new Logger("My-logger", LogLevel.Debug, new LogFormat());
+        }, haxe.exceptions.ArgumentException);
+
+        new Logger("my-logger", LogLevel.Debug, new LogFormat());
+    }
 }

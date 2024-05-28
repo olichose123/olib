@@ -1,5 +1,6 @@
 package olib.heaps;
 
+import olib.logging.Logger;
 import olib.utils.IDisposable;
 import hxd.res.DefaultFont;
 import haxe.Exception;
@@ -142,12 +143,7 @@ class Application implements IDisposable
         try
         {
             #if debug
-            // TODO: dump logs to file
-            // if (Logger.log != null)
-            // {
-            //     Logger.log.debug('dumping logs');
-            //     Logger.log.dump();
-            // }
+            Logger.dump("logs");
             #end
         }
         catch (e:Exception)

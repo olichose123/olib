@@ -8,6 +8,7 @@
 -D windowFixed=1
 -D message-reporting=pretty
 -D hl-check
+-D UTEST_PRINT_TESTS
 
 -L utest
 -L heaps
