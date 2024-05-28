@@ -1,0 +1,19 @@
+-cp src
+-main olib.tests.Main
+
+-hl bin/out.hl
+
+-D debug
+-D hscriptPos
+-D windowFixed=1
+-D message-reporting=pretty
+-D hl-check
+
+-L utest
+-L heaps
+-L json2object
+-L hlsdl
+-L hscript
+-L tink_core
+-L olib_model
+-L olib_semver
