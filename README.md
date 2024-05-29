@@ -157,3 +157,49 @@ l2.log(Debug, "Hello, World!");
 // dump logs to a folder "logs", where each logger has its own file
 Logger.dump("logs");
 ```
+
+### Scripts
+Using hscript, execute code at runtime in specialized environments. Extract functions and execute them as needed. Perfect for modding or scripting.
+
+```haxe
+import olib.scripts.Script;
+import olib.scripts.Script.Environment;
+
+// create an environment
+var myEnv = new Environment();
+
+// add a logger
+myEnv.variables.set("logger", new Logger("test-script", Debug));
+
+// define a script
+var myScript = new Script("myScript", "
+    function potato(a, b)
+    {
+        logger.info('potato');
+        return banana(a) + b;
+    }
+
+    function banana(a)
+    {
+        logger.warning('banana');
+        return a * 2;
+    }
+");
+
+// compile the script
+myScript.compile(); // can be compiled with custom configured parser
+
+// run the script
+myEnv.run(myScript);
+
+// extract the potato function
+var potato = myEnv.variables.get("potato");
+
+// call the function
+trace(potato(1, 2));
+
+// dump the logs
+Logger.dump("logs");
+```
+
+Alternatively, you can pass an existing object to the environment, and call its functions from the script, as is what is happening with the logger in the example above.
