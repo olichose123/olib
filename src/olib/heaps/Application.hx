@@ -1,5 +1,6 @@
 package olib.heaps;
 
+import hxd.Window.DisplayMode;
 import olib.logging.Logger;
 import olib.utils.IDisposable;
 import hxd.res.DefaultFont;
@@ -185,4 +186,32 @@ class Application implements IDisposable
      * Simple empty function used for engine callbacks by heaps
     **/
     static function none() {}
+
+    public static function setWindowSize(width:Int, height:Int):Void
+    {
+        @:privateAccess hxd.Window.getInstance().window.center();
+        hxd.Window.getInstance().resize(width, height);
+    }
+
+    public static function setWindowScreenMode(screenMode:ScreenMode)
+    {
+        switch (screenMode)
+        {
+            case ScreenMode.Windowed:
+                hxd.Window.getInstance().displayMode = DisplayMode.Windowed;
+
+            case ScreenMode.Fullscreen:
+                hxd.Window.getInstance().displayMode = DisplayMode.Fullscreen;
+
+            case ScreenMode.Borderless:
+                hxd.Window.getInstance().displayMode = DisplayMode.Borderless;
+        }
+    }
+}
+
+enum abstract ScreenMode(String)
+{
+    var Windowed = "windowed";
+    var Fullscreen = "fullscreen";
+    var Borderless = "borderless";
 }
