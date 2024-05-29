@@ -60,14 +60,15 @@ class Logger
                             return;
                         }
                 }
-                defaultLogger.log(last_param, Std.string(v), infos);
+                defaultLogger.log(last_param, Std.string(v));
                 return;
             }
 
-            defaultLogger.log(LogLevel.Debug, Std.string(v), infos);
+            defaultLogger.log(LogLevel.Debug, Std.string(v));
         }
         else
         {
+            internal_trace(v, infos);
             print(v);
         }
     }
@@ -108,7 +109,8 @@ class Logger
         }
     }
 
-    var name:String;
+    public var name(default, null):String;
+
     var format:LogFormat;
     var level:LogLevel;
     var logs:Array<String> = [];
@@ -130,15 +132,36 @@ class Logger
         }
     }
 
-    public function log(level:LogLevel, message:String, ?infos:PosInfos):Void
+    public function log(level:LogLevel, message:String):Void
     {
         if (log_level_order[level] < log_level_order[level])
         {
             return;
         }
-        var msg = format.format(level, message);
+
+        var msg = format.format(this, level, message);
         logs.push(msg);
         print(msg);
+    }
+
+    public function debug(message:String):Void
+    {
+        log(LogLevel.Debug, message);
+    }
+
+    public function info(message:String):Void
+    {
+        log(LogLevel.Info, message);
+    }
+
+    public function warning(message:String):Void
+    {
+        log(LogLevel.Warning, message);
+    }
+
+    public function error(message:String):Void
+    {
+        log(LogLevel.Error, message);
     }
 }
 
@@ -153,6 +176,7 @@ enum LogLevel
 
 abstract LogFormat(String) from String to String
 {
+    public static final name = "__name__";
     public static final date = "__date__";
     public static final time = "__time__";
     public static final level = "__level__";
@@ -160,12 +184,13 @@ abstract LogFormat(String) from String to String
 
     public inline function new(?s:String)
     {
-        this = s == null ? "__time__ [__level__] __message__" : s;
+        this = s == null ? "__time__ - __name__: [__level__] __message__" : s;
     }
 
-    public function format(msg_level:LogLevel, msg:String):String
+    public function format(logger:Logger, msg_level:LogLevel, msg:String):String
     {
         var s = this;
+        s = s.replace(name, logger.name);
         s = s.replace(date, Date.now().format("%F"));
         s = s.replace(time, Date.now().format("%T"));
         s = s.replace(level, msg_level.getName());
