@@ -32,17 +32,6 @@ class Application implements IDisposable
         hxd.System.start(onSystemReady);
     }
 
-    /**
-     * Resize the window to a specified size
-     * @param width
-     * @param height
-    **/
-    public function resize(width:Int, height:Int):Void
-    {
-        trace('resizing application ${width}x${height}');
-        hxd.Window.getInstance().resize(width, height);
-    }
-
     public function setScene(scene:GameScene):Void
     {
         trace('setting scene');
