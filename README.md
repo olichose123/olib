@@ -1,22 +1,90 @@
 # olib - a game engine on top of heaps.io
 
-*
-### Logger
-Create named loggers. Each logger can have its own minimum level and format. Log messages can be dumped to files. Each manager, or each mod, could have its own logger to better track bugs.
+### Application
+Create a windowed application with the olib.heaps.Application class.
 
 ```haxe
-import olib.logging.Logger;
+class Main
+{
+    public static function main()
+    {
+        var app = new Application("myApp", onInit);
+    }
 
-// create named loggers, with a minimum level and a format
-var l1 = new Logger("l1", Debug, new LogFormat());
-var l2 = new Logger("l2", Debug, "__date__ __time__ (!__level__!): __message__");
+    static function onInit(app)
+    {
+        // create and set scenes
+        app.setScene(myScene1);
 
-// log messages
-l1.log(Warning, "Oups!");
-l2.log(Debug, "Hello, World!");
+        // exit the app
+        app.exit();
 
-// dump logs to a folder "logs", where each logger has its own file
-Logger.dump("logs");
+        // configure based on settings
+        Application.setWindowScreenMode(Windowed);
+        Application.setWindowSize(800, 600);
+    }
+}
+
+```
+
+### GameScene
+A GameScene is an update and render loop that runs inside an application. An application can only have one GameScene running at a time. It is used to split parts of a game into chunks.
+
+A GameScene has both a 2d and a 3d canvas (heaps h2d.Scene and heaps h3d.scene.Scene).
+
+Examples:
+- A splash screen scene
+- A main menu scene
+- a main game loop scene
+- a pause menu scene
+- a game over scene
+
+
+```haxe
+class MyScene extends GameScene
+{
+    override function init()
+    {
+        // initialize your scene here
+    }
+
+    override function update(gameTime:GameTime):Int
+    {
+        // update your items here.
+        // It is recommended to return the number of items
+        // that were updated this frame.
+        // DO NOT call super.update(gameTime) as it will throw an error.
+
+        return 0;
+    }
+
+    // the rendering is done by the engine, so you don't need to do anything here.
+    // function render():Void
+    // {
+    //     if (s2d != null)
+    //         s2d.render(application.engine);
+    //     if (s3d != null)
+    //         s3d.render(application.engine);
+    // }
+
+    override function onAdded(application:Application)
+    {
+        // when the scene is added to the application, you can execute logic
+        super.onAdded(application);
+    }
+
+    override function onRemoved()
+    {
+        // when the scene is removed from the application, you can also execute logic
+        super.onRemoved();
+    }
+}
+
+```
+
+Now it's time to add the scene to the application:
+```haxe
+app.setScene(new MyScene()); // or use an already instantiated scene
 ```
 
 ### Locale
@@ -70,4 +138,22 @@ Logs for locale
 
 20:59:05 [Warning] Missing key: missing_key
 
+```
+
+### Logger
+Create named loggers. Each logger can have its own minimum level and format. Log messages can be dumped to files. Each manager, or each mod, could have its own logger to better track bugs.
+
+```haxe
+import olib.logging.Logger;
+
+// create named loggers, with a minimum level and a format
+var l1 = new Logger("l1", Debug, new LogFormat());
+var l2 = new Logger("l2", Debug, "__date__ __time__ (!__level__!): __message__");
+
+// log messages
+l1.log(Warning, "Oups!");
+l2.log(Debug, "Hello, World!");
+
+// dump logs to a folder "logs", where each logger has its own file
+Logger.dump("logs");
 ```
