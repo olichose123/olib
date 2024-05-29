@@ -23,14 +23,15 @@ Logger.dump("logs");
 Localized text. A Locale object represents a language, with a set of key-value pairs. The keys are the identifiers of the localized text, and the values are the localized text itself. If in debug or manually set, can log each missing key to a logger. The Locale object can be serialized to a file, and deserialized from a file.
 
 Suppose a locale json file:
-```json
+```jsonc
 {
-    "type": "Locale",
-    "name": "en_US",
+    "type": "Locale", // required for the parser to know what to create
+    "name": "en_US", // required as the model key (see olib_model library)
     "data": {
 
         "hello_world":"Hello, World!",
         "goodbye_world": "Goodbye, World!"
+        // note the absence of a "missing_key" key and value here
     }
 }
 ```
@@ -52,8 +53,8 @@ Locale.reportMissingKeys = true;
 // set the current locale
 Locale.current = locale;
 
-// this will raise a warning in the "locale" Logger, but only once. In all cases it will return "test_key" as it has no value.
-trace(Locale.get("test_key"));
+// this will raise a warning in the "locale" Logger, but only once. In all cases it will return "missing_key" as it has no value.
+trace(Locale.get("missing_key"));
 
 // These two commande will work, as there are values for these keys in the locale file.
 trace(Locale.get("hello_world"));
@@ -61,4 +62,12 @@ trace(Locale.get("goodbye_world"));
 
 // we dump the logs to see the "locale.txt" log file in logs/
 Logger.dump("logs");
+```
+
+The resulting logs:
+```
+Logs for locale
+
+20:59:05 [Warning] Missing key: missing_key
+
 ```
