@@ -205,3 +205,39 @@ Logger.dump("logs");
 Alternatively, you can pass an existing object to the environment, and call its functions from the script, as is what is happening with the logger in the example above.
 
 **Why not simply use hscript systems?:** I wanted something I could iterate on. One feature I want is to easily create multiple environments for mods. So that's why it looks like a simple wrapper around hscript.
+
+
+### Values and modifiers
+In many types of games, a base value is modified by percentages or bonuses. This is represented by values and modifiers.
+
+Modifiers are serialisable and namables (using olib_model), while values are classes.
+
+```haxe
+var ironOutput:Value = new Value(2);
+// adds 10% to the base value
+var modifier1:Modifier = new Modifier("mining_research", "description", PercentageBonus, 0.10);
+ironOutput.addModifier(modifier1);
+trace(ironOutput.total);
+
+ironOutput.removeModifier(modifier1);
+// adds 3 to the base value
+var modifier2:Modifier = new Modifier("mining_research", "description", FlatBonus, 3);
+ironOutput.addModifier(modifier2);
+trace(ironOutput.total);
+
+ironOutput.removeModifier(modifier2);
+// multiplies the base value by 0.25 (resulting in a lower value, unless input is higher than 1.0)
+var modifier3:Modifier = new Modifier("mining_research", "description", Multiplier, 0.25);
+ironOutput.addModifier(modifier3);
+trace(ironOutput.total);
+```
+
+The order of operations is the following: We first add the flat bonuses, then we multiply by the percentage bonuses. Finally, we multiply the bonuses (without the base) by the multipliers.
+
+Suppose a base value of 1, a percentage bonus of 100% (1), a flat bonus of 1, and a multiplier of 2.
+
+- The total bonuses will be 2 (flat value of 1 + modifier value of 100% of that bonus).
+- The total multiplier will be 2.
+- So base (1) + bonuses (2) = 3, multiplied by the multiplier (2) = 6.
+
+You can name and describe your modifiers so that you can easily identify them in the future, and explain to players how and why they affect their production.
