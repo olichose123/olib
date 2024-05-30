@@ -203,3 +203,5 @@ Logger.dump("logs");
 ```
 
 Alternatively, you can pass an existing object to the environment, and call its functions from the script, as is what is happening with the logger in the example above.
+
+**Why not simply use hscript systems?:** I wanted something I could iterate on, so that's why it looks like a simple wrapper around hscript.
