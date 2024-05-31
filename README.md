@@ -215,29 +215,28 @@ Modifiers are serialisable and namables (using olib_model), while values are cla
 ```haxe
 var ironOutput:Value = new Value(2);
 // adds 10% to the base value
-var modifier1:Modifier = new Modifier("mining_research", "description", PercentageBonus, 0.10);
+var modifier1:Modifier = new Modifier("research_bonus", "", PercentageBonus, 0.10);
 ironOutput.addModifier(modifier1);
 trace(ironOutput.total);
 
 ironOutput.removeModifier(modifier1);
 // adds 3 to the base value
-var modifier2:Modifier = new Modifier("mining_research", "description", FlatBonus, 3);
+var modifier2:Modifier = new Modifier("worker_bonus", "", FlatBonus, 3);
 ironOutput.addModifier(modifier2);
 trace(ironOutput.total);
 
 ironOutput.removeModifier(modifier2);
 // multiplies the base value by 0.25 (resulting in a lower value, unless input is higher than 1.0)
-var modifier3:Modifier = new Modifier("mining_research", "description", Multiplier, 0.25);
+// A value smaller than 1.0 acts as a penalty, and a value higher than 1 acts as a global bonus.
+var modifier3:Modifier = new Modifier("weather_penalty", "", Multiplier, 0.25);
 ironOutput.addModifier(modifier3);
 trace(ironOutput.total);
 ```
 
 The order of operations is the following: We first add the flat bonuses, then we multiply by the percentage bonuses. Finally, we multiply the bonuses (without the base) by the multipliers.
 
-Suppose a base value of 1, a percentage bonus of 100% (1), a flat bonus of 1, and a multiplier of 2.
+Suppose, as in the code example, a base value of 2 for our iron production, a percentage bonus of 10% because of our tech level, a flat bonus of 3 because we have three miners, and a multiplier of 25%, which is a penalty, because of bad weather.
 
-- The total bonuses will be 2 (flat value of 1 + modifier value of 100% of that bonus).
-- The total multiplier will be 2.
-- So base (1) + bonuses (2) = 3, multiplied by the multiplier (2) = 6.
+we add the flat bonus to the base value, giving 5. We had the percentage bonus of the current total, so 10% of 5 is 0.5. Our current total is 5.5. Finally, we multiply the total by 0.25, giving us a grand total of 1.375.
 
-You can name and describe your modifiers so that you can easily identify them in the future, and explain to players how and why they affect their production.
+You can name and describe your modifiers so that you can easily identify them in the future, and explain to players how and why they affect their production. See the description as a possible tooltip text in the UI.
