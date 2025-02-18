@@ -47,7 +47,7 @@ class GameScene implements IDisposable
 
     function update(gameTime:GameTime):Int
     {
-        throw new haxe.exceptions.NotImplementedException();
+        return 0;
     }
 
     function render():Void

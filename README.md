@@ -53,7 +53,7 @@ class MyScene extends GameScene
         // update your items here.
         // It is recommended to return the number of items
         // that were updated this frame.
-        // DO NOT call super.update(gameTime) as it will throw an error.
+        // No need to call super.update(gameTime).
 
         return 0;
     }
