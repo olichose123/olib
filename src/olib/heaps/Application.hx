@@ -13,6 +13,7 @@ class Application implements IDisposable
     public var engine(default, null):h3d.Engine;
     public var sevents(default, null):hxd.SceneEvents;
     public var scene(default, null):GameScene;
+    public var defaultScene(default, null):GameScene;
 
     #if debug
     public var console(default, null):h2d.Console;
@@ -119,6 +120,10 @@ class Application implements IDisposable
 
         hxd.Window.getInstance().onClose = onClose;
         hxd.Window.getInstance().title = this.title;
+
+        defaultScene = new GameScene();
+        setScene(defaultScene);
+
         trace('app is init');
         onInit(this);
     }
