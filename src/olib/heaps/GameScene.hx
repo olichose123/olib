@@ -52,9 +52,9 @@ class GameScene implements IDisposable
 
     function render():Void
     {
-        if (s2d != null)
-            s2d.render(application.engine);
         if (s3d != null)
             s3d.render(application.engine);
+        if (s2d != null)
+            s2d.render(application.engine);
     }
 }
