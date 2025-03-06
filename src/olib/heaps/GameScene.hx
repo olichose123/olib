@@ -1,6 +1,6 @@
 package olib.heaps;
 
-import olib.utils.GameTime;
+import olib.utils.maths.GameTime;
 import olib.utils.IDisposable;
 
 @:allow(oli.heaps.Application)
