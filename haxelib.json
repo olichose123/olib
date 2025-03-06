@@ -1,0 +1,14 @@
+{
+  "name": "olib",
+  "url": "https://github.com/olichose123/olib",
+  "license": "MIT",
+  "tags": ["gamedev", "heaps", "utility"],
+  "description": "Olib is a layer over heaps that provides a set of tools to help you develop your game.",
+  "version": "0.1.0",
+  "classPath": "src/",
+  "releasenote": "Initial release. Documentation in the readme for now. Many features. See also olib_model and olib_semver",
+  "contributors": ["oli_chose123"],
+  "dependencies": {
+    "heaps": "2.0.0"
+  }
+}
