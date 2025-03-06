@@ -12,9 +12,8 @@
 
 -L utest
 -L heaps
--L json2object
--L hlsdl
--L hscript
--L tink_core
--L olib_model
--L olib_semver
+#-L json2object
+#-L hlsdl
+#-L hscript
+#-L olib_model
+#-L olib_semver
