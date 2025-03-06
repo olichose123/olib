@@ -13,7 +13,7 @@ import utest.Assert;
 class Logger
 {
     static var loggers:Array<Logger> = new Array<Logger>();
-    static var defaultLogger:Logger = new Logger("default", #if debug Debug #else Info #end);
+    public static var defaultLogger:Logger = new Logger("default", #if debug Debug #else Info #end);
     static var log_level_order = [
         LogLevel.Debug => 0,
         LogLevel.Info => 1,
