@@ -11,6 +11,7 @@ import olib.utils.IDisposable;
 @:autoBuild(olib.ecs.macros.Macros.addTypeFields())
 @:autoBuild(olib.ecs.macros.Macros.addGetAllField())
 @:autoBuild(olib.ecs.macros.Macros.addClassField())
+@:autoBuild(olib.ecs.macros.Macros.addGetClassField())
 class Component implements IDisposable
 {
     public var entity(default, null):Entity;
@@ -23,12 +24,17 @@ class Component implements IDisposable
         }
     }
 
-    function getAll():SparseSet<Component>
+    public function getClass():Class<Component>
     {
         throw "not implemented";
     }
 
-    function addTo(entity:Entity):Void
+    public function getAll():SparseSet<Component>
+    {
+        throw "not implemented";
+    }
+
+    public function addTo(entity:Entity):Void
     {
         if (this.entity != null)
         {
@@ -39,7 +45,7 @@ class Component implements IDisposable
         ECS.dispatchEvent(new ComponentAddedEvent(entity, this));
     }
 
-    function remove():Void
+    public function remove():Void
     {
         if (entity != null)
         {

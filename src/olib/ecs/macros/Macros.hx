@@ -212,6 +212,32 @@ class Macros
         return fields;
     }
 
+    macro public static function addGetClassField():Array<Field>
+    {
+        // Initial fields get
+        var fields = Context.getBuildFields();
+        var type = Context.toComplexType(Context.getLocalType());
+
+        var typeName:String = MacroUtil.getTypeName(type);
+        var getClassField:Field = {
+            name: 'getClass',
+            access: [APublic, AOverride],
+            pos: Context.currentPos(),
+            kind: FFun({
+                args: [],
+                expr: macro
+                {
+                    return $i{typeName};
+                },
+                ret: macro :Class<olib.ecs.Component>
+            })
+        };
+        // add fields to array
+        fields.push(getClassField);
+        // return fields
+        return fields;
+    }
+
     macro public static function addGetAllField():Array<Field>
     {
         // Initial fields get
