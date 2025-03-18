@@ -23,6 +23,30 @@ class ECS
         return e;
     }
 
+    public static function destroyEntity(e:Entity):Void
+    {
+        var components = getEntityComponents(e);
+        for (component in components)
+        {
+            component.remove();
+        }
+        entities.remove(e);
+        dispatchEvent(new EntityDestroyedEvent(e));
+    }
+
+    public static function getEntityComponents(e:Entity):Array<Component>
+    {
+        var components = [];
+        for (kv in componentTypes.keyValueIterator())
+        {
+            if (kv.value.exists(e))
+            {
+                components.push(kv.value.get(e));
+            }
+        }
+        return components;
+    }
+
     public static function dispatchEvent(e:ECSEvent):Void
     {
         // throw e.getType();
@@ -32,8 +56,6 @@ class ECS
             return;
         for (callback in callbacks)
         {
-            trace("callback!");
-
             callback(e);
         }
     }
@@ -45,7 +67,9 @@ class ECS
         {
             listeners.set(typeName, []);
         }
-        listeners.get(typeName).push(callback);
+
+        if (!listeners.get(typeName).contains(callback))
+            listeners.get(typeName).push(callback);
     }
 
     public static function removeEventListener(type:Class<ECSEvent>, callback:ECSCallback):Void
@@ -53,12 +77,7 @@ class ECS
         var typeName = Type.getClassName(type).split('.').pop();
         if (listeners.exists(typeName))
         {
-            var callbacks = listeners.get(typeName);
-            var index = callbacks.indexOf(callback);
-            if (index != -1)
-            {
-                callbacks.splice(index, 1);
-            }
+            var callbacks = listeners.get(typeName).remove(callback);
         }
     }
 }
