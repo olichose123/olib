@@ -11,7 +11,7 @@
 -D UTEST_PRINT_TESTS
 
 -L utest
--L heaps
+#-L heaps
 #-L json2object
 #-L hlsdl
 -L hscript
