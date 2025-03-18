@@ -8,7 +8,7 @@ package olib.utils;
 class SparseSet<T>
 {
     public var items(default, null):Array<T>;
-    public var dense(default, null):Array<Int>;
+    public var dense(default, null):Array<Null<Int>>;
     public var sparse(default, null):Array<Null<Int>>;
     public var size(default, null):Int = 0;
 
