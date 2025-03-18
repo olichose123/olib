@@ -9,14 +9,16 @@ import hxd.Key;
 
 class Application implements IDisposable
 {
-    // public var loader(default, null):Loader;
+    public static var instance:Application;
+
     public var engine(default, null):h3d.Engine;
     public var sevents(default, null):hxd.SceneEvents;
     public var scene(default, null):GameScene;
     public var defaultScene(default, null):GameScene;
 
     #if debug
-    public var console(default, null):h2d.Console;
+    var consoleFontSize:Int = 16;
+    var console(default, null):h2d.Console;
     #end
 
     var isDisposed:Bool;
@@ -24,9 +26,24 @@ class Application implements IDisposable
     var onInit:(Application) -> Void;
     var updateCount:Int = 0;
 
+    #if debug
+    public static function getConsole():h2d.Console
+    {
+        return instance.console;
+    }
+    #end
+
+    #if debug
+    public function new(title:String, onInit:(Application) -> Void, consoleFontSize = 16):Void
+    #else
     public function new(title:String, onInit:(Application) -> Void):Void
+    #end
     {
         trace('new application ${title}');
+        instance = this;
+        #if debug
+        this.consoleFontSize = consoleFontSize;
+        #end
         this.title = title;
         this.onInit = onInit;
         // this.loader = loader;
@@ -115,7 +132,9 @@ class Application implements IDisposable
     {
         trace('init application');
         #if debug
-        console = new h2d.Console(DefaultFont.get());
+        var f = DefaultFont.get().clone();
+        f.resizeTo(consoleFontSize);
+        console = new h2d.Console(f);
         #end
 
         hxd.Window.getInstance().onClose = onClose;
@@ -165,8 +184,11 @@ class Application implements IDisposable
         if (Key.isPressed(Key.F1))
         {
             trace('show console');
-            if (console.parent == null && scene != null && scene.s2d != null)
-                scene.s2d.addChild(console);
+            if (scene != null && scene.s2d != null)
+            {
+                scene.s2d.add(console, -1);
+            }
+
             console.show();
         }
         #end
