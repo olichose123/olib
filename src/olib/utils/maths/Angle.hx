@@ -81,4 +81,18 @@ abstract Angle(Point)
     {
         return x * a.x + y * a.y;
     }
+
+    public inline function rotate(a:Float):Void
+    {
+        var c = Math.cos(a);
+        var s = Math.sin(a);
+        var x = this.x;
+        this.x = x * c - this.y * s;
+        this.y = x * s + this.y * c;
+    }
+
+    public inline function rotateDeg(a:Float):Void
+    {
+        rotate(a / 180 * Math.PI);
+    }
 }
