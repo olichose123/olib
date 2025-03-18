@@ -1,12 +1,143 @@
 package olib.ecs;
 
+import olib.utils.maths.GameTime;
+import olib.utils.IUpdatable;
+import olib.ecs.ECSEvent.ComponentRemovedEvent;
+import olib.ecs.ECSEvent.ComponentAddedEvent;
+import olib.ecs.ECS.ECSCallback;
 import olib.ecs.Component.ComponentClass;
 
-class System
+class System implements IUpdatable
 {
-    public function new()
+    /**
+     * Limits system refreshes per frame. When true, the first call to refreshEntities will trigger a flag.
+     * Subsequent calls to refreshEntities will be ignored until the next frame.
+     *
+     * Usage in conjunction with refreshOnDirty is undefined and not recommended.
+    **/
+    public var lockRefreshes:Bool = false;
+
+    /**
+     * When true, the system will only refresh entities on the next frame.
+     * Any call to refreshEntities will be ignored and will instead set a dirty flag.
+     * If the system is dirty, it will be refreshed on the next frame.
+     *
+     * Usage in conjunction with lockRefreshes is undefined and not recommended.
+    **/
+    public var refreshOnDirty:Bool = false;
+
+    @:noCompletion
+    public var refreshSwitch:Bool = false;
+    @:noCompletion
+    public var isDirty:Bool = false;
+
+    public var active:Bool = true;
+
+    var componentSet:CSet;
+    var entities:Array<Entity>;
+    var componentClasses:Array<ComponentClass>;
+    var componentTypes:Array<Class<Component>>;
+    var componentNames:Array<String>;
+
+    public function new(componentSet:CSet)
+    {
+        this.componentSet = componentSet;
+        refreshEntities();
+        ECS.addEventListener(ComponentAddedEvent, componentAddedListener);
+        ECS.addEventListener(ComponentRemovedEvent, componentRemovedListener);
+    }
+
+    public function update(gameTime:GameTime):Int
+    {
+        if (!active)
+            return 0;
+
+        if (lockRefreshes)
+            refreshSwitch = false;
+
+        if (refreshOnDirty && isDirty)
+        {
+            refreshOnDirty = false;
+            refreshEntities();
+            refreshOnDirty = true;
+            isDirty = false;
+        }
+
+        return processEntities();
+    }
+
+    function refreshEntities():Void
+    {
+        if (refreshOnDirty)
+        {
+            isDirty = true;
+            return;
+        }
+
+        if (lockRefreshes && refreshSwitch)
+        {
+            return;
+        }
+        else if (lockRefreshes)
+        {
+            refreshSwitch = true;
+        }
+        entities = CSetResolver.resolve(componentSet, null);
+        componentClasses = CSetResolver.extractComponentClasses(componentSet);
+        componentTypes = [];
+        componentNames = [];
+        for (componentClass in componentClasses)
+        {
+            componentTypes.push(componentClass.Class);
+        }
+        for (componentClass in componentClasses)
+        {
+            componentNames.push(componentClass.Type);
+        }
+
+        onRefresh();
+    }
+
+    function componentAddedListener(e:ECSEvent):Void
+    {
+        var ev:ComponentAddedEvent = cast e;
+        var component:Component = ev.component;
+
+        if (componentTypes.contains(component.getClass()))
+        {
+            refreshEntities();
+        }
+    }
+
+    function componentRemovedListener(e:ECSEvent):Void
+    {
+        var ev:ComponentRemovedEvent = cast e;
+        var component:Component = ev.component;
+
+        if (componentTypes.contains(component.getClass()))
+        {
+            refreshEntities();
+        }
+    }
+
+    function onRefresh():Void
     {
         //
+    }
+
+    function processEntity(entity:Entity):Int
+    {
+        return 1;
+    }
+
+    final public function processEntities():Int
+    {
+        var count = 0;
+        for (entity in entities)
+        {
+            count += processEntity(entity);
+        }
+        return count;
     }
 }
 
@@ -25,6 +156,35 @@ enum CSet
 
 class CSetResolver
 {
+    public static function extractComponentClasses(cset:CSet):Array<ComponentClass>
+    {
+        var classes = [];
+
+        switch (cset)
+        {
+            case AllOf(list):
+                classes = list;
+            case OneOf(list):
+                classes = list;
+            case AnyOf(list):
+                classes = list;
+            case One(type):
+                classes = [type];
+            case Or(setA, setB):
+                classes = extractComponentClasses(setA);
+                classes.concat(extractComponentClasses(setB));
+            case And(setA, setB):
+                classes = extractComponentClasses(setA);
+                classes.concat(extractComponentClasses(setB));
+            case Not(set):
+                classes = extractComponentClasses(set);
+            case None:
+            case All:
+        }
+
+        return classes;
+    }
+
     public static function resolve(cset:CSet, ?entities:Array<Entity>):Array<Entity>
     {
         if (entities == null)
@@ -41,7 +201,7 @@ class CSetResolver
             case AnyOf(list):
                 return anyOf(list, entities);
             case One(type):
-                return cast type.all.dense.copy();
+                return allOf([type], entities);
             case Or(setA, setB):
                 return or(setA, setB, entities);
             case And(setA, setB):
@@ -49,7 +209,7 @@ class CSetResolver
             case Not(set):
                 return not(set, entities);
             case None:
-                return [];
+                throw "not implemented";
             case All:
                 return entities;
         }
