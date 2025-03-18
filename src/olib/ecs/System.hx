@@ -33,18 +33,28 @@ class System implements IUpdatable
 
     public var active:Bool = true;
 
-    var componentSet:CSet;
+    var componentSet:ComponentSet;
     var entities:Array<Entity>;
     var componentClasses:Array<ComponentClass>;
     var componentTypes:Array<Class<Component>>;
     var componentNames:Array<String>;
+    var ecs:ECS;
 
-    public function new(componentSet:CSet)
+    public function new(componentSet:ComponentSet, ecs:ECS)
     {
+        if (ecs == null)
+            throw "ECS cannot be null";
+        this.ecs = ecs;
+
         this.componentSet = componentSet;
         refreshEntities();
-        ECS.addEventListener(ComponentAddedEvent, componentAddedListener);
-        ECS.addEventListener(ComponentRemovedEvent, componentRemovedListener);
+        ecs.addEventListener(ComponentAddedEvent, componentAddedListener);
+        ecs.addEventListener(ComponentRemovedEvent, componentRemovedListener);
+    }
+
+    public function initialize():Void
+    {
+        //
     }
 
     public function update(gameTime:GameTime):Int
@@ -82,8 +92,8 @@ class System implements IUpdatable
         {
             refreshSwitch = true;
         }
-        entities = CSetResolver.resolve(componentSet, null);
-        componentClasses = CSetResolver.extractComponentClasses(componentSet);
+        entities = componentSet.resolve();
+        componentClasses = componentSet.extractComponentClasses();
         componentTypes = [];
         componentNames = [];
         for (componentClass in componentClasses)
@@ -98,7 +108,7 @@ class System implements IUpdatable
         onRefresh();
     }
 
-    function componentAddedListener(e:ECSEvent):Void
+    final function componentAddedListener(e:ECSEvent):Void
     {
         var ev:ComponentAddedEvent = cast e;
         var component:Component = ev.component;
@@ -106,10 +116,11 @@ class System implements IUpdatable
         if (componentTypes.contains(component.getClass()))
         {
             refreshEntities();
+            onAdded(component);
         }
     }
 
-    function componentRemovedListener(e:ECSEvent):Void
+    final function componentRemovedListener(e:ECSEvent):Void
     {
         var ev:ComponentRemovedEvent = cast e;
         var component:Component = ev.component;
@@ -117,10 +128,21 @@ class System implements IUpdatable
         if (componentTypes.contains(component.getClass()))
         {
             refreshEntities();
+            onRemoved(component);
         }
     }
 
     function onRefresh():Void
+    {
+        //
+    }
+
+    function onAdded(component:Component):Void
+    {
+        //
+    }
+
+    function onRemoved(component:Component):Void
     {
         //
     }
@@ -130,7 +152,7 @@ class System implements IUpdatable
         return 1;
     }
 
-    final public function processEntities():Int
+    public function processEntities():Int
     {
         var count = 0;
         for (entity in entities)
@@ -154,10 +176,29 @@ enum CSet
     Not(set:CSet);
 }
 
-class CSetResolver
+class ComponentSet
 {
-    public static function extractComponentClasses(cset:CSet):Array<ComponentClass>
+    public var set(default, null):CSet;
+
+    var entities:Array<Entity>;
+    var componentClasses:Array<ComponentClass>;
+    var componentTypes:Array<Class<Component>>;
+    var componentNames:Array<String>;
+    var ecs:ECS;
+
+    public function new(set:CSet, ecs:ECS):Void
     {
+        if (ecs == null)
+            throw "ECS cannot be null";
+        this.ecs = ecs;
+        this.set = set;
+    }
+
+    public function extractComponentClasses(?cset:CSet):Array<ComponentClass>
+    {
+        if (cset == null)
+            cset = set;
+
         var classes = [];
 
         switch (cset)
@@ -185,11 +226,14 @@ class CSetResolver
         return classes;
     }
 
-    public static function resolve(cset:CSet, ?entities:Array<Entity>):Array<Entity>
+    public function resolve(?cset:CSet, ?entities:Array<Entity>):Array<Entity>
     {
+        if (cset == null)
+            cset = set;
+
         if (entities == null)
         {
-            @:privateAccess entities = cast ECS.entities.dense.copy();
+            @:privateAccess entities = cast ecs.entities.dense.copy();
         }
 
         switch (cset)
@@ -209,13 +253,13 @@ class CSetResolver
             case Not(set):
                 return not(set, entities);
             case None:
-                throw "not implemented";
+                return [];
             case All:
                 return entities;
         }
     }
 
-    static function and(setA:CSet, setB:CSet, entities:Array<Entity>):Array<Entity>
+    function and(setA:CSet, setB:CSet, entities:Array<Entity>):Array<Entity>
     {
         var a = resolve(setA, entities);
         var b = resolve(setB, entities);
@@ -230,7 +274,7 @@ class CSetResolver
         return result;
     }
 
-    static function or(setA:CSet, setB:CSet, entities:Array<Entity>):Array<Entity>
+    function or(setA:CSet, setB:CSet, entities:Array<Entity>):Array<Entity>
     {
         var a = resolve(setA, entities);
         var b = resolve(setB, entities);
@@ -245,7 +289,7 @@ class CSetResolver
         return result;
     }
 
-    static function not(set:CSet, entities:Array<Entity>):Array<Entity>
+    function not(set:CSet, entities:Array<Entity>):Array<Entity>
     {
         var excluded = resolve(set, entities);
         var result = [];
@@ -261,7 +305,7 @@ class CSetResolver
         return result;
     }
 
-    static function allOf(componentList:Array<ComponentClass>, entities:Array<Entity>):Array<Entity>
+    function allOf(componentList:Array<ComponentClass>, entities:Array<Entity>):Array<Entity>
     {
         var result = [];
         for (entity in entities)
@@ -269,7 +313,7 @@ class CSetResolver
             var hasAll = true;
             for (component in componentList)
             {
-                if (!component.all.exists(entity))
+                if (!ecs.hasComponent(entity, component.Class))
                 {
                     hasAll = false;
                     break;
@@ -283,7 +327,7 @@ class CSetResolver
         return result;
     }
 
-    static function anyOf(componentList:Array<ComponentClass>, entities:Array<Entity>):Array<Entity>
+    function anyOf(componentList:Array<ComponentClass>, entities:Array<Entity>):Array<Entity>
     {
         var result = [];
         for (entity in entities)
@@ -291,7 +335,7 @@ class CSetResolver
             var hasAny = false;
             for (component in componentList)
             {
-                if (component.all.exists(entity))
+                if (ecs.hasComponent(entity, component.Class))
                 {
                     hasAny = true;
                     break;
@@ -305,7 +349,7 @@ class CSetResolver
         return result;
     }
 
-    static function oneOf(componentList:Array<ComponentClass>, entities:Array<Entity>):Array<Entity>
+    function oneOf(componentList:Array<ComponentClass>, entities:Array<Entity>):Array<Entity>
     {
         var result = [];
         for (entity in entities)
@@ -314,7 +358,8 @@ class CSetResolver
             var hasMany = false;
             for (component in componentList)
             {
-                if (component.all.exists(entity))
+                // if (component.all.exists(entity))
+                if (ecs.hasComponent(entity, component.Class))
                 {
                     if (hasOne)
                     {
@@ -332,7 +377,7 @@ class CSetResolver
         return result;
     }
 
-    static function intersect(a:Array<Int>, b:Array<Int>)
+    function intersect(a:Array<Int>, b:Array<Int>)
     {
         var result = [];
         for (i in a)

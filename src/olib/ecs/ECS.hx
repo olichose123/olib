@@ -1,5 +1,7 @@
 package olib.ecs;
 
+import olib.ecs.Component.ComponentClass;
+import haxe.ds.IntMap;
 import olib.utils.SparseSet;
 import olib.utils.SparseSet.IntSparseSet;
 import haxe.ds.StringMap;
@@ -9,13 +11,76 @@ typedef ECSCallback = (e:ECSEvent) -> Void;
 
 class ECS
 {
-    static var entityCounter:Int = 0;
-    static var entities:IntSparseSet = new IntSparseSet();
+    public var entityCounter(default, null):Int = 0;
+    public var entities(default, null):IntSparseSet;
+    public var listeners(default, null):StringMap<Array<ECSCallback>>;
+    public var componentsByName(default, null):StringMap<SparseSet<Component>>;
+    public var componentsByCC(default, null):Map<ComponentClass, SparseSet<Component>>;
 
-    public static var listeners:StringMap<Array<ECSCallback>> = new StringMap();
-    public static var componentTypes:StringMap<SparseSet<Component>> = new StringMap();
+    public function new()
+    {
+        entities = new IntSparseSet();
+        listeners = new StringMap();
+        componentsByName = new StringMap();
+        componentsByCC = new Map<ComponentClass, SparseSet<Component>>();
+    }
 
-    public static function createEntity():Entity
+    public function addComponent(component:Component, entity:Entity):Void
+    {
+        if (component.entity != null)
+        {
+            throw "Component already owned by an entity";
+        }
+
+        @:privateAccess component.entity = entity;
+        var cl:ComponentClass = cast component.getClass();
+        var set:SparseSet<Component>;
+
+        if (!componentsByCC.exists(cl))
+        {
+            set = new SparseSet<Component>();
+            componentsByCC.set(cl, set);
+        }
+        else
+        {
+            set = componentsByCC.get(cl);
+        }
+        set.add(entity, component);
+
+        if (!componentsByName.exists(cl.Type))
+        {
+            componentsByName.set(cl.Type, set);
+        }
+        dispatchEvent(new ComponentAddedEvent(entity, component));
+    }
+
+    public function getComponent<T:Component>(entity:Entity, cl:Class<T>):T
+    {
+        var cc:ComponentClass = cast cl;
+        return cast componentsByCC.get(cc).get(entity);
+    }
+
+    public function hasComponent<T:Component>(entity:Entity, cl:Class<T>):Bool
+    {
+        var cc:ComponentClass = cast cl;
+        return cast componentsByCC.get(cc).exists(entity);
+    }
+
+    public function removeComponent(component:Component):Void
+    {
+        if (component.entity == null)
+            return;
+
+        var cl:ComponentClass = cast component.getClass();
+        var set:SparseSet<Component> = componentsByCC.get(cl);
+        if (set != null)
+        {
+            set.remove(component.entity);
+            dispatchEvent(new ComponentRemovedEvent(component.entity, component));
+        }
+    }
+
+    public function createEntity():Entity
     {
         var e = entityCounter++;
         entities.add(e);
@@ -23,21 +88,21 @@ class ECS
         return e;
     }
 
-    public static function destroyEntity(e:Entity):Void
+    public function destroyEntity(e:Entity):Void
     {
         var components = getEntityComponents(e);
         for (component in components)
-        {
             component.remove();
-        }
+
         entities.remove(e);
         dispatchEvent(new EntityDestroyedEvent(e));
     }
 
-    public static function getEntityComponents(e:Entity):Array<Component>
+    public function getEntityComponents(e:Entity):Array<Component>
     {
         var components = [];
-        for (kv in componentTypes.keyValueIterator())
+
+        for (kv in componentsByName.keyValueIterator())
         {
             if (kv.value.exists(e))
             {
@@ -47,10 +112,8 @@ class ECS
         return components;
     }
 
-    public static function dispatchEvent(e:ECSEvent):Void
+    public function dispatchEvent(e:ECSEvent):Void
     {
-        // throw e.getType();
-        trace(e.getType());
         var callbacks = listeners.get(e.getType());
         if (callbacks == null)
             return;
@@ -60,7 +123,7 @@ class ECS
         }
     }
 
-    public static function addEventListener(type:Class<ECSEvent>, callback:ECSCallback):Void
+    public function addEventListener(type:Class<ECSEvent>, callback:ECSCallback):Void
     {
         var typeName = Type.getClassName(type).split('.').pop();
         if (!listeners.exists(typeName))
@@ -72,7 +135,7 @@ class ECS
             listeners.get(typeName).push(callback);
     }
 
-    public static function removeEventListener(type:Class<ECSEvent>, callback:ECSCallback):Void
+    public function removeEventListener(type:Class<ECSEvent>, callback:ECSCallback):Void
     {
         var typeName = Type.getClassName(type).split('.').pop();
         if (listeners.exists(typeName))

@@ -1,7 +1,8 @@
 package olib.ecs;
 
+import hscript.Expr;
+import olib.ecs.System.ComponentSet;
 import olib.utils.maths.GameTime;
-import olib.ecs.System.CSetResolver;
 import olib.ecs.System.CSet;
 import olib.ecs.Component.ComponentClass;
 import olib.ecs.ECSEvent.EntityCreatedEvent;
@@ -14,105 +15,115 @@ class ECSTest extends Test
 {
     function testComponent():Void
     {
-        var entity = ECS.createEntity();
-        var c = new MyFirstComponent(entity, "potato", 10, 20);
-        Assert.isTrue(MyFirstComponent.all.exists(entity));
-        Assert.equals(MyFirstComponent.all.get(entity), c);
-        @:privateAccess Assert.equals(c.getAll(), MyFirstComponent.all);
+        var ecs = new ECS();
+        var entity = ecs.createEntity();
+        var c = new MyFirstComponent(entity, ecs, "potato", 10, 20);
+        c.x = 3;
+        Assert.isTrue(ecs.hasComponent(entity, MyFirstComponent));
+        Assert.equals(ecs.getComponent(entity, MyFirstComponent), c);
     }
 
     function testCallback():Void
     {
+        var ecs = new ECS();
         // ugly way to update a value by reference
         var arr = [];
         var callback = function(e:ECSEvent)
         {
             arr.push(e);
         }
-        ECS.addEventListener(EntityCreatedEvent, callback);
-        var entity = ECS.createEntity();
+        ecs.addEventListener(EntityCreatedEvent, callback);
+        var entity = ecs.createEntity();
         Assert.isTrue(arr.length == 1);
     }
 
     function testSystemComponentHandling()
     {
-        var entity = ECS.createEntity();
-        var component = new MyFirstComponent(entity, "potato", 10, 20);
+        var ecs = new ECS();
+        var entity = ecs.createEntity();
+        var component = new MyFirstComponent(entity, ecs, "potato", 10, 20);
         var c:ComponentClass = cast MyFirstComponent;
-        Assert.isTrue(c.all.exists(entity));
-        Assert.equals(c.all.get(entity), component);
+        Assert.isTrue(ecs.hasComponent(entity, MyFirstComponent));
+        Assert.equals(ecs.getComponent(entity, MyFirstComponent), component);
 
         Assert.equals(MyFirstComponent, c.Class);
     }
 
     function testCSetResolver()
     {
-        @:privateAccess ECS.entities.clear();
-        @:privateAccess ECS.entityCounter = 0;
-        var emily_abcde = ECS.createEntity();
-        var johny_abcd = ECS.createEntity();
-        var bobby_abc = ECS.createEntity();
-        var alice_ab = ECS.createEntity();
-        var henry_d = ECS.createEntity();
+        var ecs = new ECS();
 
-        new CompA(emily_abcde);
-        new CompB(emily_abcde);
-        new CompC(emily_abcde);
-        new CompD(emily_abcde);
-        new CompE(emily_abcde);
+        var emily_abcde = ecs.createEntity();
+        var johny_abcd = ecs.createEntity();
+        var bobby_abc = ecs.createEntity();
+        var alice_ab = ecs.createEntity();
+        var henry_d = ecs.createEntity();
 
-        new CompA(johny_abcd);
-        new CompB(johny_abcd);
-        new CompC(johny_abcd);
-        new CompD(johny_abcd);
+        new CompA(emily_abcde, ecs);
+        new CompB(emily_abcde, ecs);
+        new CompC(emily_abcde, ecs);
+        new CompD(emily_abcde, ecs);
+        new CompE(emily_abcde, ecs);
 
-        new CompA(bobby_abc);
-        new CompB(bobby_abc);
-        new CompC(bobby_abc);
+        new CompA(johny_abcd, ecs);
+        new CompB(johny_abcd, ecs);
+        new CompC(johny_abcd, ecs);
+        new CompD(johny_abcd, ecs);
 
-        new CompA(alice_ab);
-        new CompB(alice_ab);
+        new CompA(bobby_abc, ecs);
+        new CompB(bobby_abc, ecs);
+        new CompC(bobby_abc, ecs);
 
-        new CompD(henry_d);
+        new CompA(alice_ab, ecs);
+        new CompB(alice_ab, ecs);
 
-        var set1 = CSet.All;
-        var resolved_set1 = CSetResolver.resolve(set1);
+        new CompD(henry_d, ecs);
+
+        var set1 = new ComponentSet(CSet.All, ecs);
+        var resolved_set1 = set1.resolve();
         Assert.equals([0, 1, 2, 3, 4].toString(), resolved_set1.toString());
 
-        // var set2 = CSet.None;
-        // var resolved_set2 = CSetResolver.resolve(set2);
-        // Assert.equals([].toString(), resolved_set2.toString());
+        var set2 = new ComponentSet(CSet.None, ecs);
+        var resolved_set2 = set2.resolve();
+        Assert.equals([].toString(), resolved_set2.toString());
 
-        var set3 = CSet.AllOf([cast CompA, cast CompB, cast CompC]);
-        var resolved_set3 = CSetResolver.resolve(set3);
+        var set3 = new ComponentSet(CSet.AllOf([cast CompA, cast CompB, cast CompC]), ecs);
+        var resolved_set3 = set3.resolve();
         Assert.equals([0, 1, 2].toString(), resolved_set3.toString());
 
-        var set4 = CSet.OneOf([cast CompC, cast CompD]);
-        var resolved_set4 = CSetResolver.resolve(set4);
+        // var set4 = CSet.OneOf([cast CompC, cast CompD]);
+        var set4 = new ComponentSet(CSet.OneOf([cast CompC, cast CompD]), ecs);
+        var resolved_set4 = set4.resolve();
         Assert.equals([2, 4].toString(), resolved_set4.toString());
 
-        var set5 = CSet.AnyOf([cast CompC, cast CompD]);
-        var resolved_set5 = CSetResolver.resolve(set5);
+        // var set5 = CSet.AnyOf([cast CompC, cast CompD]);
+        var set5 = new ComponentSet(CSet.AnyOf([cast CompC, cast CompD]), ecs);
+        var resolved_set5 = set5.resolve();
         Assert.equals([0, 1, 2, 4].toString(), resolved_set5.toString());
 
-        var set6 = CSet.One(cast CompD);
-        var resolved_set6 = CSetResolver.resolve(set6);
+        // var set6 = CSet.One(cast CompD);
+        var set6 = new ComponentSet(CSet.One(cast CompD), ecs);
+        var resolved_set6 = set6.resolve();
         Assert.equals([0, 1, 4].toString(), resolved_set6.toString());
 
-        var set7 = CSet.And(set3, set4);
-        var resolved_set7 = CSetResolver.resolve(set7);
+        // var set7 = CSet.And(set3, set4);
+        var set7 = new ComponentSet(CSet.And(set3.set, set4.set), ecs);
+        var resolved_set7 = set7.resolve();
         Assert.equals([2].toString(), resolved_set7.toString());
 
-        var set8 = CSet.Or(set3, set4);
-        var resolved_set8 = CSetResolver.resolve(set8);
+        // var set8 = CSet.Or(set3, set4);
+        var set8 = new ComponentSet(CSet.Or(set3.set, set4.set), ecs);
+        var resolved_set8 = set8.resolve();
         Assert.equals([0, 1, 2, 4].toString(), resolved_set8.toString());
 
-        var set9 = CSet.Not(CSet.One(cast CompD));
-        var resolved_set9 = CSetResolver.resolve(set9);
+        // var set9 = CSet.Not(CSet.One(cast CompD));
+        var set9 = new ComponentSet(CSet.Not(CSet.One(cast CompD)), ecs);
+        var resolved_set9 = set9.resolve();
         Assert.equals([2, 3].toString(), resolved_set9.toString());
 
-        var set10 = CSet.And(CSet.AllOf([cast CompA, cast CompB]), CSet.Not(CSet.AnyOf([cast CompC, cast CompD])));
-        var resolved_set10 = CSetResolver.resolve(set10);
+        // var set10 = ;
+        var set10 = new ComponentSet(CSet.And(CSet.AllOf([cast CompA, cast CompB]), CSet.Not(CSet.AnyOf([cast CompC, cast CompD]))), ecs);
+        var resolved_set10 = set10.resolve();
         Assert.equals([3].toString(), resolved_set10.toString());
     }
 
@@ -123,36 +134,43 @@ class ECSTest extends Test
 
     function testSystem()
     {
-        @:privateAccess ECS.entities.clear();
-        @:privateAccess ECS.entityCounter = 0;
-        var emily = ECS.createEntity();
-        var johny = ECS.createEntity();
+        var ecs = new ECS();
+        var emily = ecs.createEntity();
+        var johny = ecs.createEntity();
 
-        new SCompA(emily, 0);
-        new SCompB(emily, 5);
+        new SCompA(emily, ecs, 0);
+        new SCompB(emily, ecs, 5);
 
-        new SCompA(johny, 0);
-        new SCompB(johny, 10);
+        new SCompA(johny, ecs, 0);
+        new SCompB(johny, ecs, 10);
 
-        var system = new MySystem();
+        var system = new MySystem(ecs);
         system.processEntities();
-        Assert.equals(5, cast SCompA.all.get(emily).x);
-        Assert.equals(10, cast SCompA.all.get(johny).x);
+        // Assert.equals(5, cast SCompA.all.get(emily).x);
+        // Assert.equals(10, cast SCompA.all.get(johny).x);
+        Assert.equals(5, ecs.getComponent(emily, SCompA).x);
+        Assert.equals(10, ecs.getComponent(johny, SCompA).x);
 
-        SCompB.all.get(emily).remove();
+        ecs.getComponent(emily, SCompB).remove();
         system.processEntities();
-        Assert.equals(5, cast SCompA.all.get(emily).x);
-        Assert.equals(20, cast SCompA.all.get(johny).x);
+        // Assert.equals(5, cast SCompA.all.get(emily).x);
+        // Assert.equals(20, cast SCompA.all.get(johny).x);
+        Assert.equals(5, ecs.getComponent(emily, SCompA).x);
+        Assert.equals(20, ecs.getComponent(johny, SCompA).x);
 
-        var mariane = ECS.createEntity();
-        new SCompA(mariane, 0);
+        var mariane = ecs.createEntity();
+        new SCompA(mariane, ecs, 0);
         system.processEntities();
-        Assert.equals(5, cast SCompA.all.get(emily).x);
-        Assert.equals(30, cast SCompA.all.get(johny).x);
-        Assert.equals(0, cast SCompA.all.get(mariane).x);
-        new SCompB(mariane, 15);
+        // Assert.equals(5, cast SCompA.all.get(emily).x);
+        // Assert.equals(30, cast SCompA.all.get(johny).x);
+        // Assert.equals(0, cast SCompA.all.get(mariane).x);
+        Assert.equals(5, ecs.getComponent(emily, SCompA).x);
+        Assert.equals(30, ecs.getComponent(johny, SCompA).x);
+        Assert.equals(0, ecs.getComponent(mariane, SCompA).x);
+        new SCompB(mariane, ecs, 15);
         system.processEntities();
-        Assert.equals(15, cast SCompA.all.get(mariane).x);
+        // Assert.equals(15, cast SCompA.all.get(mariane).x);
+        Assert.equals(15, ecs.getComponent(mariane, SCompA).x);
     }
 }
 
@@ -161,6 +179,11 @@ class MyFirstComponent extends Component
     public var x:Int;
     public var y:Int;
     public var name:String;
+
+    public override function toString():String
+    {
+        return Type;
+    }
 }
 
 class CompA extends Component {}
@@ -181,9 +204,9 @@ class SCompB extends Component
 
 class MySystem extends System
 {
-    public function new()
+    public function new(ecs:ECS)
     {
-        super(CSet.AllOf([cast SCompA, cast SCompB]));
+        super(new ComponentSet(CSet.AllOf([cast SCompA, cast SCompB]), ecs), ecs);
     }
 
     override function update(gameTime:GameTime):Int
@@ -198,8 +221,9 @@ class MySystem extends System
 
     override function processEntity(entity:Entity)
     {
-        var a = cast SCompA.all.get(entity);
-        var b = cast SCompB.all.get(entity);
+        var a = ecs.getComponent(entity, SCompA);
+        var b = ecs.getComponent(entity, SCompB);
+
         a.x += b.y;
         return 1;
     }

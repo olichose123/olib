@@ -12,7 +12,7 @@ using StringTools;
 
 class Macros
 {
-    macro public static function addPublicFieldInitializers():Array<Field>
+    macro public static function addPublicFieldInitializersAndSuperAndEntityField():Array<Field>
     {
         // Initial fields get
         var fields = Context.getBuildFields();
@@ -61,6 +61,15 @@ class Macros
             }
         }
 
+        constructor_args.insert(0, {name: "ecs", type: macro :olib.ecs.ECS, opt: false});
+        constructor_args.insert(0, {name: "entity", type: macro :olib.ecs.Entity, opt: false});
+        constructor_exprs.push(macro
+            {
+                // TODO: set into ecs instance instead
+                // all.add(entity, this);
+                super(entity, ecs);
+            });
+
         if (constructor == null)
         {
             constructor = {
@@ -89,57 +98,75 @@ class Macros
         return fields;
     }
 
-    macro public static function addEntityField():Array<Field>
-    {
-        // Initial fields get
-        var fields = Context.getBuildFields();
-        var type = Context.toComplexType(Context.getLocalType());
-
-        var constructor:Field = null;
-        try
-        {
-            constructor = MacroUtil.getFieldByName(fields, "new");
-            fields.remove(constructor);
-        }
-        catch (e:MacroException) {}
-
-        var constructor_exprs:Array<Expr> = [
-            macro
-            {
-                all.add(entity, this);
-                super(entity);
-            }
-        ];
-
-        // add expression to constructor
-        var entityArg:FunctionArg = {name: "entity", type: macro :olib.ecs.Entity, opt: false};
-
-        if (constructor == null)
-        {
-            constructor = {
-                name: 'new',
-                access: [APublic],
-                pos: Context.currentPos(),
-                kind: FFun({
-                    args: [entityArg],
-                    expr: macro $b{constructor_exprs},
-                    ret: macro :Void
-                })
-            };
-        }
-        else
-        {
-            MacroUtil.addArgumentToFunction(constructor, entityArg, true);
-            for (expr in constructor_exprs)
-                MacroUtil.addExpressionToFunction(constructor, expr);
-        }
-
-        // add fields to array
-        fields.push(constructor);
-
-        // return fields
-        return fields;
-    }
+    // macro public static function addPublicFieldInitializers():Array<Field>
+    // {
+    //     // Initial fields get
+    //     var fields = Context.getBuildFields();
+    //     var type = Context.toComplexType(Context.getLocalType());
+    //     var constructor:Field = null;
+    //     try
+    //     {
+    //         constructor = MacroUtil.getFieldByName(fields, "new");
+    //         fields.remove(constructor);
+    //     }
+    //     catch (e:MacroException) {}
+    //     var initializableFields:Array<Field> = MacroUtil.filterFieldsByAccess(fields, [APublic], [AStatic, AFinal, APrivate, AOverride]);
+    //     var constructor_exprs:Array<Expr> = [];
+    //     var constructor_args:Array<FunctionArg> = [];
+    //     initializableFields.sort(function(a, b):Int
+    //     {
+    //         var aa = a.name.toLowerCase();
+    //         var bb = b.name.toLowerCase();
+    //         if (aa < bb)
+    //             return -1;
+    //         if (aa > bb)
+    //             return 1;
+    //         return 0;
+    //     });
+    //     for (field in initializableFields)
+    //     {
+    //         var fname:String = field.name;
+    //         switch (field.kind)
+    //         {
+    //             case FVar(t, e):
+    //                 constructor_exprs.push(macro
+    //                     {
+    //                         if ($i{fname} != null)
+    //                             this.$fname = cast $i{fname};
+    //                     });
+    //                 constructor_args.push({
+    //                     name: field.name,
+    //                     type: t,
+    //                     opt: true,
+    //                 });
+    //             case _:
+    //         }
+    //     }
+    //     if (constructor == null)
+    //     {
+    //         constructor = {
+    //             name: 'new',
+    //             access: [APublic],
+    //             pos: Context.currentPos(),
+    //             kind: FFun({
+    //                 args: constructor_args,
+    //                 expr: macro $b{constructor_exprs},
+    //                 ret: macro :Void
+    //             })
+    //         };
+    //     }
+    //     else
+    //     {
+    //         for (arg in constructor_args)
+    //             MacroUtil.addArgumentToFunction(constructor, arg);
+    //         for (expr in constructor_exprs)
+    //             MacroUtil.addExpressionToFunction(constructor, expr);
+    //     }
+    //     // add fields to array
+    //     fields.push(constructor);
+    //     // return fields
+    //     return fields;
+    // }
 
     macro public static function addSparseSet():Array<Field>
     {
@@ -148,7 +175,7 @@ class Macros
 
         var all:Field = {
             name: "all",
-            access: [APublic, AStatic, AFinal],
+            access: [APublic, AStatic],
             pos: Context.currentPos(),
             kind: FVar(macro :olib.utils.SparseSet<$type>, macro new olib.utils.SparseSet<$type>())
         };
