@@ -1,6 +1,6 @@
 # ignore compiled files
 /bin
-
+/dump
 # ignore haxelib
 /.haxelib
 
