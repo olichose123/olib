@@ -13,7 +13,7 @@ class Task<Params, Output> implements IDisposable
     public var has_run(default, null):Bool = false;
     public var has_error(default, null):Bool = false;
 
-    public static function runTask(task:Task<Dynamic, Dynamic>, skipErrors:Bool = false, disposeAfter:Bool = false):Task<Dynamic, Dynamic>
+    public static function runTask<A, B>(task:Task<A, B>, skipErrors:Bool = false, disposeAfter:Bool = false):Task<A, B>
     {
         task.processInit();
         if (task.has_error)
