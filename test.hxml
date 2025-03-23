@@ -1,19 +1,20 @@
 -cp src
 -main olib.tests.Main
+--interp
+#-hl bin/out.hl
 
--hl bin/out.hl
-
--D debug
--D hscriptPos
--D windowFixed=1
--D message-reporting=pretty
--D hl-check
+#-D debug
+#-D hscriptPos
+#-D windowFixed=1
+#-D message-reporting=pretty
+#-D hl-check
 -D UTEST_PRINT_TESTS
+-D no-deprecation-warnings
 
 -L utest
 #-L heaps
 #-L json2object
 #-L hlsdl
--L hscript
--L olib_model
+#-L hscript
+#-L olib_model
 #-L olib_semver
