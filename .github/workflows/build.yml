@@ -1,0 +1,49 @@
+# https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+        haxe:
+          - latest
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v2 #https://github.com/actions/checkout
+
+      - name: "Cache Haxelib Repository"
+        uses: actions/cache@v4
+        with:
+          path: .haxelib
+          key: ${{ runner.os }}-haxelib-${{ hashFiles('**/haxelib.json') }}
+          restore-keys: |
+            ${{ runner.os }}-haxelib-
+
+      - name: Install Haxe ${{ matrix.haxe }}
+        uses: krdlab/setup-haxe@v1 # https://github.com/krdlab/setup-haxe
+        with:
+          haxe-version: ${{ matrix.haxe }}
+
+      - name: Install haxe libs
+        shell: bash
+        id: prerequisites
+        run: |
+          haxelib newrepo
+          haxelib install utest
+
+      - name: Run tests
+        shell: bash
+        run: |
+          haxe test.hxml
