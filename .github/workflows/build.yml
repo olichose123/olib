@@ -45,4 +45,4 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          haxe --interp -L utest -cp src -main olib.tests.Main
+          haxe test.hxml
