@@ -26,7 +26,7 @@ jobs:
       - name: "Cache Haxelib Repository"
         uses: actions/cache@v4
         with:
-          path: $RUNNER_TOOL_CACHE/haxe/${{ matrix.haxe }}/x64/lib
+          path: .haxelib
           key: ${{ runner.os }}-haxelib-${{ hashFiles('**/haxelib.json') }}
           restore-keys: |
             ${{ runner.os }}-haxelib-
@@ -40,6 +40,7 @@ jobs:
         shell: bash
         id: prerequisites
         run: |
+          haxelib newrepo
           haxelib install utest
 
       - name: Run tests
