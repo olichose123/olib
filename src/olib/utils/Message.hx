@@ -22,6 +22,16 @@ class MessageDispatcher
         listeners.get(typeName).push(cast listener);
     }
 
+    public function hasListener<T:Message>(type:Class<T>, listener:MessageHandler<T>):Bool
+    {
+        var typeName = Type.getClassName(type);
+        if (listeners.exists(typeName))
+        {
+            return listeners.get(typeName).contains(cast listener);
+        }
+        return false;
+    }
+
     public function removeListener<T:Message>(type:Class<T>, listener:MessageHandler<T>):Void
     {
         var typeName = Type.getClassName(type);
