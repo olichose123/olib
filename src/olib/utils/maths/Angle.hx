@@ -2,8 +2,8 @@ package olib.utils.maths;
 
 import h2d.col.Point;
 
-@:forward(clone)
-abstract Angle(Point)
+@:forward(clone, scaled)
+abstract Angle(Point) to Point
 {
     /**
      * Represents an angle, a direction vector
