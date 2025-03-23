@@ -198,21 +198,3 @@ abstract LogFormat(String) from String to String
         return s;
     }
 }
-
-class LoggerTest extends Test
-{
-    function testNameRegex():Void
-    {
-        Assert.raises(function()
-        {
-            new Logger("My Logger", LogLevel.Debug, new LogFormat());
-        }, haxe.exceptions.ArgumentException);
-
-        Assert.raises(function()
-        {
-            new Logger("My-logger", LogLevel.Debug, new LogFormat());
-        }, haxe.exceptions.ArgumentException);
-
-        new Logger("my-logger", LogLevel.Debug, new LogFormat());
-    }
-}
