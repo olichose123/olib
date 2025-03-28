@@ -205,8 +205,12 @@ class Application implements IDisposable
 
     public static function setWindowSize(width:Int, height:Int):Void
     {
+        #if sys
         @:privateAccess hxd.Window.getInstance().window.center();
         hxd.Window.getInstance().resize(width, height);
+        #else
+        throw new haxe.exceptions.NotImplementedException("setWindowSize is not implemented for this platform.");
+        #end
     }
 
     public static function setWindowScreenMode(screenMode:ScreenMode)

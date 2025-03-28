@@ -1,6 +1,8 @@
 package olib.logging;
 
+#if sys
 import sys.FileSystem;
+#end
 
 using StringTools;
 using haxe.EnumTools.EnumValueTools;
@@ -89,6 +91,9 @@ class Logger
 
     public static function dump(logsPath:String):Void
     {
+        #if !sys
+        throw new haxe.exceptions.NotImplementedException("Logger.dump() is only available on sys target.");
+        #else
         for (logger in loggers)
         {
             if (logger.logs.length == 0)
@@ -107,6 +112,7 @@ class Logger
             }
             logFile.close();
         }
+        #end
     }
 
     public var name(default, null):String;

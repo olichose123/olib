@@ -4,7 +4,6 @@ import hxd.fs.FileEntry;
 import haxe.io.Bytes;
 #if sys
 import sys.io.File;
-#end
 import hxd.fs.LocalFileSystem;
 
 class Loader extends hxd.res.Loader
@@ -68,3 +67,12 @@ class Loader extends hxd.res.Loader
         return result;
     }
 }
+#else
+class Loader extends hxd.res.Loader
+{
+    public function new(fs)
+    {
+        super(fs);
+    }
+}
+#end
