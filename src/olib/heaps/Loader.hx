@@ -5,6 +5,7 @@ import haxe.io.Bytes;
 #if sys
 import sys.io.File;
 import hxd.fs.LocalFileSystem;
+#end
 
 class Loader extends hxd.res.Loader
 {
@@ -13,7 +14,11 @@ class Loader extends hxd.res.Loader
     public function new(path:String, ?config:String):Void
     {
         root = path;
+        #if sys
         var fs = new LocalFileSystem(path, config);
+        #else
+        var fs = hxd.fs.EmbedFileSystem.create(null);
+        #end
         super(fs);
     }
 
@@ -67,12 +72,3 @@ class Loader extends hxd.res.Loader
         return result;
     }
 }
-#else
-class Loader extends hxd.res.Loader
-{
-    public function new(fs)
-    {
-        super(fs);
-    }
-}
-#end
