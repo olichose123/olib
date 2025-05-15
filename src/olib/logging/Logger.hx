@@ -9,8 +9,6 @@ using haxe.EnumTools.EnumValueTools;
 using DateTools;
 
 import haxe.PosInfos;
-import utest.Test;
-import utest.Assert;
 
 class Logger
 {
